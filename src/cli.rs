@@ -13,6 +13,8 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum SubCommands {
+    /// Get a list of namespaces
+    GetNamespaces,
     /// Get a list of pods
     GetPods,
     /// Get a list of deployments
@@ -30,20 +32,26 @@ pub enum SubCommands {
 impl Cli {
     pub async fn run(&self, app: App) -> Result<(), kube::Error> {
         match self.subcmd {
+            SubCommands::GetNamespaces=>{
+                let namespaces = app.get_namespaces().await?;
+                for namespace in namespaces {
+                    println!("{}", namespace.name_any());
+                }
+            }
             SubCommands::GetPods => {
-                let pods = app.get_pods().await?;
+                let pods = app.get_pods("default").await?;
                 for pod in pods {
                     println!("{}", pod.name_any());
                 }
             }
             SubCommands::GetDeployments => {
-                let deployments = app.get_deployments().await?;
+                let deployments = app.get_deployments("default").await?;
                 for deployment in deployments {
                     println!("{}", deployment.name_any());
                 }
             }
             SubCommands::Logs => {
-                let pods = app.get_pods().await?;
+                let pods = app.get_pods("default").await?;
                 let mut pod_names = Vec::new();
                 for pod in &pods {
                     pod_names.push(pod.name_any());
@@ -68,7 +76,7 @@ impl Cli {
                 app.get_pod_container_logs(pod, container).await?;
             }
             SubCommands::RestartDeployment => {
-                let deployments = app.get_deployments().await?;
+                let deployments = app.get_deployments("default").await?;
                 let mut deployment_names = Vec::new();
                 for deployment in &deployments {
                     let name = deployment.name_any();

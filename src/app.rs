@@ -1,6 +1,5 @@
-use std::io::BufRead;
 use k8s_openapi::api::apps::v1::Deployment;
-use k8s_openapi::api::core::v1::{Container, Pod};
+use k8s_openapi::api::core::v1::{Container, Namespace, Pod};
 use k8s_openapi::chrono;
 use kube::{Api, Error, ResourceExt};
 use kube::api::{ListParams, Patch, PatchParams};
@@ -16,8 +15,17 @@ impl App {
         let client = kube::Client::try_default().await?;
         Ok(App { client })
     }
-    pub(crate) async fn get_deployments(&self) -> Result<Vec<Deployment>, Error> {
-        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(),"default");
+    pub(crate) async fn get_namespaces(&self) -> Result<Vec<Namespace>, Error> {
+        let namespaces: Api<Namespace> = Api::all(self.client.clone());
+        let lp = ListParams::default();
+        let mut result = Vec::new();
+        for ns in namespaces.list(&lp).await? {
+            result.push(ns);
+        }
+        Ok(result)
+    }
+    pub(crate) async fn get_deployments(&self, namespace:&str) -> Result<Vec<Deployment>, Error> {
+        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), &namespace);
         let lp = ListParams::default();
         let mut result = Vec::new();
         for dep in deployments.list(&lp).await? {
@@ -25,8 +33,8 @@ impl App {
         }
         Ok(result)
     }
-    pub(crate) async fn get_pods(&self) -> Result<Vec<Pod>, Error> {
-        let pods: Api<Pod> = Api::namespaced(self.client.clone(),"default");
+    pub(crate) async fn get_pods(&self, namespace: &str) -> Result<Vec<Pod>, Error> {
+        let pods: Api<Pod> = Api::namespaced(self.client.clone(), namespace);
         let lp = ListParams::default();
         let mut result = Vec::new();
         for pod in pods.list(&lp).await? {
