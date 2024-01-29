@@ -17,7 +17,7 @@ impl App {
         Ok(App { client })
     }
     pub(crate) async fn get_deployments(&self) -> Result<Vec<Deployment>, Error> {
-        let deployments: Api<Deployment> = Api::all(self.client.clone());
+        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(),"default");
         let lp = ListParams::default();
         let mut result = Vec::new();
         for dep in deployments.list(&lp).await? {
@@ -26,7 +26,7 @@ impl App {
         Ok(result)
     }
     pub(crate) async fn get_pods(&self) -> Result<Vec<Pod>, Error> {
-        let pods: Api<Pod> = Api::all(self.client.clone());
+        let pods: Api<Pod> = Api::namespaced(self.client.clone(),"default");
         let lp = ListParams::default();
         let mut result = Vec::new();
         for pod in pods.list(&lp).await? {
